@@ -75,6 +75,6 @@ import vcf # pip3 install --install-option="--prefix=/my/python_packages" pyvcf
 
 ## Citation
 
-Rath EM et al. Manuscript in preparation.
+Rath EM et al. 2021. Manuscript in preparation.
 
 
