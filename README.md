@@ -3,7 +3,7 @@
 # Identify retrocopied genes from whole genome sequencing structural variant clean intron deletions
 
 This small suite of scripts identifies retrocopied genes in whole genome sequencing data (WGS) from structural variant (SV) deletion variants (DEL or INDEL) that correspond to an entire intron.
-Prior to running this small pipeline, Gridss (Cameron et al. 2017) or equivalent software needs to be run, to generate the SV BND records that will be used by this pipeline to identify retrocopied genes.
+Prior to running this small pipeline, Gridss ([Cameron et al. 2017](https://genome.cshlp.org/content/27/12/2050) [PMID: 29097403](https://pubmed.ncbi.nlm.nih.gov/29097403/) software available at [https://github.com/PapenfussLab/gridss](https://github.com/PapenfussLab/gridss)) or equivalent software needs to be run, to generate the SV BND records that will be used by this pipeline to identify retrocopied genes.
 
 ## Usage
 
@@ -74,5 +74,6 @@ import vcf # pip3 install --install-option="--prefix=/my/python_packages" pyvcf
 
 ## References
 
-Cameron DL, Schröder J, Penington JS, Do H, Molania R, Dobrovic A, Speed TP, Papenfuss AT. GRIDSS: sensitive and specific genomic rearrangement detection using positional de Bruijn graph assembly. Genome Res. 2017 Dec;27(12):2050-2060. doi: 10.1101/gr.222109.117. Epub 2017 Nov 2. PMID: 29097403; PMCID: PMC5741059. Gridss software is available at [https://github.com/PapenfussLab/gridss](https://github.com/PapenfussLab/gridss)
+Rath EM et al. Manuscript under preparation
+
 
