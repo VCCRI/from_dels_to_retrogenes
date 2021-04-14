@@ -44,7 +44,7 @@ Prior to running this small pipeline, Gridss ([Cameron et al. 2017](https://geno
 #
 ./run_7_get_insertion_point_sequence_from_reference.sh hg38 cohort_id sample_id /my/output/directory /my/temp/directory reference_fasta /my/PYTHONPATH
 #
-# The output produced by the above does not include the subsequently found insertion points.
+# The output produced by the above does include the initially found insertion points and those found using the insertion points of other samples, but does not include the subsequently found insertion points for genes for which insertion points were initially found.
 ```
 
 ## Dependencies
