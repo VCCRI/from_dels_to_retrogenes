@@ -2,7 +2,7 @@
 
 # Identify retrocopied genes from whole genome sequencing structural variant clean intron deletions
 
-This small suite of scripts identifies retrocopied genes in whole genome sequencing data (WGS) from structural variant (SV) deletion variants (DEL or INDEL) that correspond to an entire intron, referred to here as clean intron deletions.
+This small pipeline of scripts identifies retrocopied genes in whole genome sequencing data (WGS) from structural variant (SV) deletion variants (DEL or INDEL) that correspond to an entire intron, referred to here as clean intron deletions.
 
 Prior to running this small pipeline, Gridss ([Cameron et al. 2017](https://genome.cshlp.org/content/27/12/2050), [PMID: 29097403](https://pubmed.ncbi.nlm.nih.gov/29097403/), software available at [https://github.com/PapenfussLab/gridss](https://github.com/PapenfussLab/gridss)) or equivalent software needs to be run, to generate the SV BND records that will be used by this pipeline to identify retrocopied genes.
 
