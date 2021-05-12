@@ -10,7 +10,7 @@ infile_from_gridss=$6 # the input gridss vcf file, will be used to create file n
 infile=$infile_from_gridss
 infile_basename=$(basename $infile)
 outfile_basename="${infile_basename%.gz}"
-outfile_basename="${infile_basename%.vcf}".filter_svtypes.vcf
+outfile_basename="${outfile_basename%.vcf}".filter_svtypes.vcf
 outfile="${outdir}"/"${outfile_basename}"
 
 output_SV_vcf_file="${outfile}"
