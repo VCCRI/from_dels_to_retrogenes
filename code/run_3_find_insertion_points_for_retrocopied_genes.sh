@@ -15,7 +15,7 @@ in_sv=$infile_from_gridss
 outfile="${outdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes_1.tsv
 
 if [[ $genome == "hg19" ]]; then
-  gene_regions=../reference_data/hg19_UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.tx
+  gene_regions=../reference_data/hg19_UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.txt
 else
   gene_regions=../reference_data/hg38_UCSC_GRCh38_GenesAndGenePredictions_genes_RefSeq_20200901.txt
 fi
