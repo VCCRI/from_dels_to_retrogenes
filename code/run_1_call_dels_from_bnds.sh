@@ -179,8 +179,8 @@ cat "${tmpdir}/${sample}_gridss_hdr_no_CHROM.txt" "${tmpdir}/${sample}_gridss_IN
 echo 'python' "${SVannotation_software_directory}"'/convert_sample_GT_in_VCF_file.py -i' "${tmpdir}/${sample}_gridss_INS_DEL_INDEL_DUP_INV_BND_got_GT_of_dot.vcf" '-o' "${output_SV_vcf_file}"' -a ALL'
 python "${SVannotation_software_directory}"/convert_sample_GT_in_VCF_file.py -i "${tmpdir}/${sample}_gridss_INS_DEL_INDEL_DUP_INV_BND_got_GT_of_dot.vcf" -o "${output_SV_vcf_file}" -a ALL
 
-echo 'python3' "${sw}"'/victorchang_scripts/convert_vcf_info_fields_to_tab_delimited_for_annovar_qual.py -i' "${output_SV_vcf_file}" '-o' "${output_SV_tsv_file}"
-python3 "${sw}"/victorchang_scripts/convert_vcf_info_fields_to_tab_delimited_for_annovar_qual.py -i "${output_SV_vcf_file}" -o "${output_SV_tsv_file}"
+echo 'python3' "${SVannotation_software_directory}"'/convert_vcf_info_fields_to_tab_delimited_for_annovar_qual.py -i' "${output_SV_vcf_file}" '-o' "${output_SV_tsv_file}"
+python3 "${SVannotation_software_directory}"/convert_vcf_info_fields_to_tab_delimited_for_annovar_qual.py -i "${output_SV_vcf_file}" -o "${output_SV_tsv_file}"
 
 ##################################################
 # Remove some of the GRIDSS output fields, and make sure remaining column names are unique
@@ -194,10 +194,6 @@ echo 'For' ${sample} 'remove some of the GRIDSS output fields'
 echo 'cut -d$\t -f1-6,28,50-' "${output_SV_tsv_file}" '| sed -e s/\tEND\tSVLEN\tSVTYPE\t/\tSVEND\tSVLEN\tSVTYPE\t/ >' "${output_SV_tsv_file_rmvCols}"
 cut -d$'\t' -f1-6,28,50- "${output_SV_tsv_file}" | sed -e 's/\tEND\tSVLEN\tSVTYPE\t/\tSVEND\tSVLEN\tSVTYPE\t/' > "${output_SV_tsv_file_rmvCols}"
 
-
-
 echo 'Finished!'
-
-touch "${done_file}"
-rm -f "${lock_file}"
+echo ''
 
