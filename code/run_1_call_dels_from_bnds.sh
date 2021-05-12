@@ -23,6 +23,13 @@ output_SV_tsv_file_rmvCols="${output_SV_tsv_file}".rmvCols.tsv
 SVannotation_software_directory=.
 GAP=3000
 cohort_id=$sample
+regions_of_LowComplexity_SimpleRepeats=""
+if [[ "$genome" == "hg19" ]]; then
+  regions_of_LowComplexity_SimpleRepeats=../reference_data/hg19_UCSC_GRCh37_Repeats_LowComplexity_SimpleRepeats.bed
+fi
+if [[ "$genome" == "hg38" ]]; then
+  regions_of_LowComplexity_SimpleRepeats=../reference_data/hg38_UCSC_GRCh38_Repeats_LowComplexity_SimpleRepeats.bed
+fi
 
 ##################################################
 # Gunzip the gridss output vcf file
