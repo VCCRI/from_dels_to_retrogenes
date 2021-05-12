@@ -4,11 +4,16 @@
 
 This small pipeline of scripts identifies retrocopied genes in whole genome sequencing data (WGS) from structural variant (SV) deletion variants (DEL or INDEL) that correspond to an entire intron, referred to here as clean intron deletions.
 
-Prior to running this small pipeline, Gridss ([Cameron et al. 2017](https://genome.cshlp.org/content/27/12/2050), [PMID: 29097403](https://pubmed.ncbi.nlm.nih.gov/29097403/), software available at [https://github.com/PapenfussLab/gridss](https://github.com/PapenfussLab/gridss)) or equivalent software needs to be run, to generate the SV BND records that will be used by this pipeline to identify retrocopied genes.
+Prior to running this small pipeline, Gridss ([Cameron et al. 2017](https://genome.cshlp.org/content/27/12/2050), [PMID: 29097403](https://pubmed.ncbi.nlm.nih.gov/29097403/), software available at [https://github.com/PapenfussLab/gridss](https://github.com/PapenfussLab/gridss)) or equivalent software that generates VCF BND records for deletions needs to be run, to generate the SV BND records that will be used by this pipeline to identify retrocopied genes.
 
 ## Usage
 
 ```bash
+# Make sure the reference files provided with this pipeline are decompressed.
+cd from_dels_to_retrogenes/reference_data
+gunzip *.gz
+cd ../code
+
 # Identify retrocopied genes and their insertion points in each sample,
 # by running the following for each sample.
 # If your data is hg19 and not hg38, then genome parameters should be hg19.
