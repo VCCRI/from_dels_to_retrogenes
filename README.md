@@ -33,11 +33,11 @@ cd ../code
 # Repeat these two scripts, incrementing the last parameter each round so that the output file names can be different to previous rounds,
 # until no new insertion points are identified, which will manifest as an empty output file.
 #
-./run_5_find_subsequent_insertion_points.sh /my/output/directory hg38 cohort_id sample_id /my/output/directory /my/temp/directory /my/gridss/output.vcf.gz /my/PYTHONPATH /a/representative/bam/file 2
+./run_5_find_subsequent_insertion_points.sh hg38 cohort_id sample_id /my/output/directory /my/temp/directory /my/gridss/output.vcf.gz /my/PYTHONPATH /a/representative/bam/file 2
 ./run_4_concat_insertion_points_for_all_samples.sh /my/output/directory
-./run_5_find_subsequent_insertion_points.sh /my/output/directory hg38 cohort_id sample_id /my/output/directory /my/temp/directory /my/gridss/output.vcf.gz /my/PYTHONPATH /a/representative/bam/file 3
+./run_5_find_subsequent_insertion_points.sh hg38 cohort_id sample_id /my/output/directory /my/temp/directory /my/gridss/output.vcf.gz /my/PYTHONPATH /a/representative/bam/file 3
 ./run_4_concat_insertion_points_for_all_samples.sh /my/output/directory
-./run_5_find_subsequent_insertion_points.sh /my/output/directory hg38 cohort_id sample_id /my/output/directory /my/temp/directory /my/gridss/output.vcf.gz /my/PYTHONPATH /a/representative/bam/file 4
+./run_5_find_subsequent_insertion_points.sh hg38 cohort_id sample_id /my/output/directory /my/temp/directory /my/gridss/output.vcf.gz /my/PYTHONPATH /a/representative/bam/file 4
 ./run_4_concat_insertion_points_for_all_samples.sh /my/output/directory
 #
 # Use the previously identified insertion points to identify insertion points in retrocopied genes that do not yet have insertion points identified,
