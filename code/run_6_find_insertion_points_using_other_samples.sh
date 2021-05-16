@@ -69,8 +69,17 @@ awk 'BEGIN {FS="\t";OFS="\t"} {if (NR==1) {left="is_left_BND_present";right="is_
 #
 echo ''
 
-echo 'python3' $sw'/find_insertion_points_using_insertion_points_of_other_samples.py --in_retrocopies' $tmp_infile '--in_sv' $in_sv '--in_retrocopies_other_samples' $other_samples_retrocopies '-o' $outfile
-python3 $sw/find_insertion_points_using_insertion_points_of_other_samples.py --in_retrocopies $tmp_infile --in_sv $in_sv --in_retrocopies_other_samples $other_samples_retrocopies -o $outfile
+other_basename=$(basename $other_samples_retrocopies)
+tmp_other="${tmpdir}"/"${other_basename}"
+
+echo 'awk' 'BEGIN {FS="\t";OFS="\t"} {if (NR==1) {left="is_left_BND_present";right="is_right_BND_present"} else { left="";right=""; if ($10!=""){left="left_BND_is_present"}; if ($11!=""){right="right_BND_is_present"} } printf $1; for (i=2; i<=NF; ++i) {printf OFS $i}; printf OFS left OFS right RS }' $other_samples_retrocopies '| tr -d $''\r' '>' $tmp_other
+#
+awk 'BEGIN {FS="\t";OFS="\t"} {if (NR==1) {left="is_left_BND_present";right="is_right_BND_present"} else { left="";right=""; if ($10!=""){left="left_BND_is_present"}; if ($11!=""){right="right_BND_is_present"} } printf $1; for (i=2; i<=NF; ++i) {printf OFS $i}; printf OFS left OFS right RS }' $other_samples_retrocopies | tr -d $'\r' > $tmp_other
+#
+echo ''
+
+echo 'python3' $sw'/find_insertion_points_using_insertion_points_of_other_samples.py --in_retrocopies' $tmp_infile '--in_sv' $in_sv '--in_retrocopies_other_samples' $tmp_other '-o' $outfile
+python3 $sw/find_insertion_points_using_insertion_points_of_other_samples.py --in_retrocopies $tmp_infile --in_sv $in_sv --in_retrocopies_other_samples $tmp_other -o $outfile
 echo ''
 
 echo ''
