@@ -45,8 +45,8 @@ if [ -f "$in_sv" ]; then
   do_nothing=1
 else
   in_sv_vcf="${in_sv%.gz}"
-  echo 'bgzip' $in_sv_vcf
-  bgzip $in_sv_vcf
+  echo 'bgzip -f' $in_sv_vcf
+  bgzip -f $in_sv_vcf
   echo ''
 fi
 

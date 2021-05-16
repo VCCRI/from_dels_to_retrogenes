@@ -12,7 +12,7 @@ read -r hdr1 < "${indir}"/"${file1}"
 echo -e "$hdr1" > $outfile
 
 :>$outfile
-for infile in "${indir}"/*.insertion_points_for_deletions_that_are_retrocopied_genes*.tsv; do
+for infile in "${indir}"/*.insertion_points_for_deletions_that_are_retrocopied_genes_*.tsv; do
 
   infile_basename=$(basename $infile)
   IFS='.' read -r -a array <<< "$infile_basename"
