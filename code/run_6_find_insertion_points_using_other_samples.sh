@@ -17,7 +17,7 @@ in_bam=$8 # preferably the bam file for this sample, sequenced to 30x or 40x dep
 #head -n 1 $infile1 > $tmp_hdr
 #cat $infiles | grep -v '^cohort' | cat $tmp_hdr - > $infile
 
-infile="${outdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes.tsv
+infile="${outdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes_1.tsv
 
 other_samples_retrocopies="${outdir}"/All__insertion_points_for_deletions_that_are_retrocopied_genes.sort_by_sample.txt
 in_dels="${outdir}"/"${sample}".clean_intron_deletions_with_strand_and_vaf.tsv
