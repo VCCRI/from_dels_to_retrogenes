@@ -56,8 +56,8 @@ echo 'sort -k7,7 -k3,3V -k4,4V -k5,5V' $in_dels '>' $tmp_in_dels
 sort -k7,7 -k3,3V -k4,4V -k5,5V $in_dels > $tmp_in_dels
 echo ''
 
-echo 'python3' $sw'/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels' $tmp_in_dels '--in_sv' $in_sv '--gene_regions' $gene_regions '-o' $outfile '--gene_region_extension 10000000 --blacklist_regions' $blacklist_regions '--bam' $in_bam '--blacklist_depth 140'
-python3 $sw/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels $tmp_in_dels --in_sv $in_sv --gene_regions $gene_regions -o $outfile --gene_region_extension 10000000 --blacklist_regions $blacklist_regions --bam $in_bam --blacklist_depth 140
+echo 'python3' $sw'/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels' $tmp_in_dels '--in_sv' $in_sv '--gene_regions' $gene_regions '-o' $outfile '--gene_region_extension 100000 --blacklist_regions' $blacklist_regions '--bam' $in_bam '--blacklist_depth 140'
+python3 $sw/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels $tmp_in_dels --in_sv $in_sv --gene_regions $gene_regions -o $outfile --gene_region_extension 100000 --blacklist_regions $blacklist_regions --bam $in_bam --blacklist_depth 140
 echo ''
 
 echo ''

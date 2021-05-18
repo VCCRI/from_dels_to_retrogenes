@@ -73,8 +73,8 @@ echo ''
 
 # look for more insertion points
 
-echo 'python3' $sw'/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels' $tmp_in_dels '--in_sv' $in_sv '--gene_regions' $gene_regions '-o' $tmp_outfile '--gene_region_extension 10000000 --bam' $in_bam '--blacklist_regions' $tmp_blacklist_regions '--blacklist_depth 140'
-python3 $sw/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels $tmp_in_dels --in_sv $in_sv --gene_regions $gene_regions -o $tmp_outfile --gene_region_extension 10000000 --bam $in_bam --blacklist_regions $tmp_blacklist_regions --blacklist_depth 140
+echo 'python3' $sw'/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels' $tmp_in_dels '--in_sv' $in_sv '--gene_regions' $gene_regions '-o' $tmp_outfile '--gene_region_extension 100000 --bam' $in_bam '--blacklist_regions' $tmp_blacklist_regions '--blacklist_depth 140'
+python3 $sw/find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels $tmp_in_dels --in_sv $in_sv --gene_regions $gene_regions -o $tmp_outfile --gene_region_extension 100000 --bam $in_bam --blacklist_regions $tmp_blacklist_regions --blacklist_depth 140
 echo ''
 
 # Don't output genes for which an insertion point was not found.
