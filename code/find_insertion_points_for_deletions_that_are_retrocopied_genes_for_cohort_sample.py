@@ -1,4 +1,4 @@
-# python3 find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels temp1_SCHN_1891.txt --in_sv SCHN_1891.gridss_2_7_3.vcf.gz --gene_regions /home/emma/emma/clean_intron_deletions/UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.txt --gene_region_extension 2000000 --blacklist_regions insertion_points_blacklist_hg19.txt --bam SCHN_1891.bam --blacklist_depth 200 --args.max_dist_btwn_ins_pts 35 -o temp1_out_SCHN_1891.txt
+# python3 find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels temp1_SCHN_1891.txt --in_sv SCHN_1891.gridss_2_7_3.vcf.gz --gene_regions /home/emma/emma/clean_intron_deletions/UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.txt --gene_region_extension_for_start_of_gene 20 --gene_region_extension 100000 --blacklist_regions insertion_points_blacklist_hg19.txt --bam SCHN_1891.bam --blacklist_depth 200 --args.max_dist_btwn_ins_pts 35 -o temp1_out_SCHN_1891.txt
 
 # This program reads in clean_intron_deletions (there can be multiple ones for a given sample and gene, one for each intron of the gene).
 # For each sample gene, this program looks for the insertion point.
@@ -108,8 +108,10 @@ def parse_arguments(args):
                         help='Input VCF file of structural variants containing BND records that represent potential retrocopied gene insertion points. Must be bgzip compressed and indexed with tabix so this program can retrieve by co-ordinates.')
     parser.add_argument('--gene_regions', dest='gene_regions_file', 
                         help='Tab-delimited list of gene regions, one line per gene, in format: CHROM START_POS END_POS GENE STRAND')
+    parser.add_argument('--gene_region_extension_for_start_of_gene', dest='gene_region_extension_for_start_of_gene', required=False, 
+                        help='Add this many basepairs before the beginning of the gene region to look for its insertion point')
     parser.add_argument('--gene_region_extension', dest='gene_region_extension', required=False, 
-                        help='Add this many basepairs on either side of the gene region to look for its insertion point')
+                        help='Add this many basepairs on after the end of the gene region to look for its insertion point')
     parser.add_argument('--blacklist_regions', dest='blacklist_regions', required=False, 
                         help='Do not find any insertion points in these blacklisted regions. If any found then keep looking for insertion points elsewhere.')
     parser.add_argument('--bam', dest='bam', required=False, 
@@ -403,7 +405,7 @@ class ChromRegion:
         return str(self.__class__) + ": " + str(self.__dict__)
 
 
-def read_all_genes_start_and_end( input_file_path, gene_region_extension ):
+def read_all_genes_start_and_end( input_file_path, gene_region_extension, gene_region_extension_for_start_of_gene ):
 
   # 1	11873	14409	DDX11L1	+
   # 1	14361	29370	WASH7P	-
@@ -420,6 +422,7 @@ def read_all_genes_start_and_end( input_file_path, gene_region_extension ):
     start = int(data[1])
     end = int(data[2])
     gene = str(data[3])
+    strand = str(data[4])
     if gene in gene_regions:
       start = min( start, gene_regions[gene].start )
       end = max( start, gene_regions[gene].end )
@@ -429,9 +432,13 @@ def read_all_genes_start_and_end( input_file_path, gene_region_extension ):
 
   for gene in gene_regions:
     gene_regions[gene].start = gene_regions[gene].start - gene_region_extension
+    if (strand == "+"):
+      gene_regions[gene].start = gene_regions[gene].start - gene_region_extension_for_start_of_gene
     if (gene_regions[gene].start < 1):
       gene_regions[gene].start = 1
     gene_regions[gene].end = gene_regions[gene].end + gene_region_extension
+    if (strand == "-"):
+      gene_regions[gene].end = gene_regions[gene].end + gene_region_extension_for_start_of_gene
 
   return gene_regions
 
@@ -852,13 +859,13 @@ def write_out_gene_and_its_insertion_points(writer, obj):
   return
 
 
-def find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points):
+def find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, gene_region_extension_for_start_of_gene, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points):
 
   writer = csv.writer(open(output_file_path, 'w'), delimiter='\t')
   write_out_header(writer)
 
   # Read in all the reference genes, find the start and end positions of each gene, ready to be used for any clean_intron_deletions in any gene.
-  gene_regions = read_all_genes_start_and_end( gene_regions_path, gene_region_extension )
+  gene_regions = read_all_genes_start_and_end( gene_regions_path, gene_region_extension, gene_region_extension_for_start_of_gene )
 
   # Read in all the clean_intron_deletions, ready to process soon one by one.
   list_of_genes_and_their_clean_intron_deletions = read_clean_intron_deletions_for_genes(in_dels_path)
@@ -938,16 +945,21 @@ def main(args):
   in_sv_path = args.in_sv_file
   gene_regions_path = args.gene_regions_file
   output_file_path = args.output_file
-  gene_region_extension = args.gene_region_extension
   max_distance_between_insertion_points = 35
   if args.max_dist_btwn_ins_pts is not None:
     max_distance_between_insertion_points = int(args.max_dist_btwn_ins_pts)
+  gene_region_extension = 100000
+  if args.gene_region_extension is not None:
+    gene_region_extension = int(args.gene_region_extension)
+  gene_region_extension_for_start_of_gene = 20
+  if args.gene_region_extension_for_start_of_gene is not None:
+    gene_region_extension_for_start_of_gene = int(args.gene_region_extension_for_start_of_gene)
   print(' ')
 
   blacklisted_regions = get_blacklist_regions(args)
   bam_pysam_handle = open_bam_file(args)
 
-  find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points)
+  find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, gene_region_extension_for_start_of_gene, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points)
 
   print(' ')
   print('find_insertion_points_for_deletions_that_are_retrocopied_genes.py')
