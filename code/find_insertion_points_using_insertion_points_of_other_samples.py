@@ -4,7 +4,7 @@
 # Contains the left-most and right-most clean-intron-deletion coordinates, the point before the left-most and the point after the right-most coordinates that connect to the insertion-point (called retrocopy_start and retrocopy_end), and the insertion-points left and right positions (usually approx 11 bp apart).
 # Insertion point can be on a different chromosome. The clean-intron-deletions and retrocopy start/end are on the same chromosome as each other.
 #
-# cohort	sample	gene	chrom	clean_intron_del_start	clean_intron_del_end	retrocopy_start	retrocopy_end	insertion_chrom	left_insertion_point	right_insertion_point	insertion_sequence	retrocopy_insertion_direction	is_left_BND_present	is_right_BND_present
+# cohort	sample	gene	chrom	clean_intron_del_start	clean_intron_del_end	retrocopy_start	retrocopy_end	insertion_chrom	left_insertion_point	right_insertion_point	insertion_sequence	retrocopy_insertion_direction	insertion_point_status   is_left_BND_present	is_right_BND_present
 # mycohort	mysample	RBP5	12	7281658	7281688						
 # mycohort	mysample	TYRO3	15	41866014	41870084	41851396	41871536	13	44069827	44069838	AAAAAAAAAAAAAAAAAAAAAAAAA	FORWARD	left_BND_is_present	right_BND_is_present
 # mycohort	mysample	SMAD4	18	48556993	48604626	48556624	48606219	9	127732636	127732713	FORWARD	left_BND_is_present	right_BND_is_present	
@@ -12,7 +12,7 @@
 
 # in_retrocopies_other_samples format, it is the same as the in_retrocopies format:
 #
-# cohort	sample	gene	chrom	clean_intron_del_start	clean_intron_del_end	retrocopy_start	retrocopy_end	insertion_chrom	left_insertion_point	right_insertion_point	insertion_sequence	retrocopy_insertion_direction	is_left_BND_present	is_right_BND_present
+# cohort	sample	gene	chrom	clean_intron_del_start	clean_intron_del_end	retrocopy_start	retrocopy_end	insertion_chrom	left_insertion_point	right_insertion_point	insertion_sequence	retrocopy_insertion_direction	insertion_point_status   is_left_BND_present	is_right_BND_present
 # mycohort	sample111	PER3	1	7890012	7890066								
 # mycohort	sample111	RBP5	12	7281658	7281688								
 # mycohort	sample311	RBP5	12	7281658	7281688								
@@ -145,7 +145,7 @@ class InsertionPoint:
     """
     This object represents the insertion point of a retrocopied gene.
     """
-    def __init__(self, initial_retrocopy_chrom, initial_retrocopy_start, initial_retrocopy_end, initial_insertion_chrom, initial_left_insertion_point, initial_right_insertion_point, initial_insertion_sequence, initial_retrocopy_insertion_direction, initial_is_left_BND_present, initial_is_right_BND_present):
+    def __init__(self, initial_retrocopy_chrom, initial_retrocopy_start, initial_retrocopy_end, initial_insertion_chrom, initial_left_insertion_point, initial_right_insertion_point, initial_insertion_sequence, initial_retrocopy_insertion_direction, initial_insertion_point_status, initial_is_left_BND_present, initial_is_right_BND_present):
         self.retrocopy_chrom = initial_retrocopy_chrom
         self.retrocopy_start = 0
         if is_integer(initial_retrocopy_start):
@@ -158,10 +158,11 @@ class InsertionPoint:
         self.right_insertion_point = int(initial_right_insertion_point)
         self.insertion_sequence = initial_insertion_sequence
         self.retrocopy_insertion_direction = initial_retrocopy_insertion_direction
+        self.insertion_point_status = initial_insertion_point_status
         self.is_left_BND_present = initial_is_left_BND_present
         self.is_right_BND_present = initial_is_right_BND_present
     def print(self, **kwargs):
-        print( "retrocopy: " + self.retrocopy_chrom + ":" + str(self.retrocopy_start) + "-" + str(self.retrocopy_end) + " insertion: " + self.insertion_chrom + ":" + str(self.left_insertion_point) + "-" + str(self.right_insertion_point) + " seq: " + str(self.insertion_sequence) + " direction: " + str(self.retrocopy_insertion_direction) + " is_left_BND_present: " + str(self.is_left_BND_present) + " is_right_BND_present: " + str(self.is_right_BND_present))
+        print( "retrocopy: " + self.retrocopy_chrom + ":" + str(self.retrocopy_start) + "-" + str(self.retrocopy_end) + " insertion: " + self.insertion_chrom + ":" + str(self.left_insertion_point) + "-" + str(self.right_insertion_point) + " seq: " + str(self.insertion_sequence) + " direction: " + str(self.retrocopy_insertion_direction) + " status: " + str(self.insertion_point_status) + " is_left_BND_present: " + str(self.is_left_BND_present) + " is_right_BND_present: " + str(self.is_right_BND_present))
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
@@ -194,8 +195,9 @@ def read_retrocopies_with_insertion_points( input_file_path ):
     right_insertion_point = str(data[10])
     insertion_sequence = str(data[11])
     retrocopy_insertion_direction = str(data[12])
-    is_left_BND_present = str(data[13])
-    is_right_BND_present = str(data[14])
+    insertion_point_status = str(data[13])
+    is_left_BND_present = str(data[14])
+    is_right_BND_present = str(data[15])
 
     keep_this_record = False
     if (is_header):
@@ -229,7 +231,7 @@ def read_retrocopies_with_insertion_points( input_file_path ):
 
       if (this_insertion_point_is_already_in_list == False):
 
-        new_retrocopy_insertion_point = InsertionPoint( chrom, retrocopy_start, retrocopy_end, insertion_chrom, left_insertion_point, right_insertion_point, insertion_sequence, retrocopy_insertion_direction, is_left_BND_present, is_right_BND_present )
+        new_retrocopy_insertion_point = InsertionPoint( chrom, retrocopy_start, retrocopy_end, insertion_chrom, left_insertion_point, right_insertion_point, insertion_sequence, retrocopy_insertion_direction, insertion_point_status, is_left_BND_present, is_right_BND_present )
 
         if gene in retrocopies:
           retrocopies_for_this_gene = retrocopies[gene]
@@ -302,6 +304,7 @@ def does_sample_have_this_insertion_point( vcf_reader, clean_intron_del_chrom, c
              new_right_insertion_point = one_insertion_point.left_insertion_point
              new_insertion_sequence = bnd_connectingSequence
              new_retrocopy_insertion_direction = one_insertion_point.retrocopy_insertion_direction
+             new_insertion_point_status = one_insertion_point.insertion_point_status
              new_is_left_BND_present = ""
              new_is_right_BND_present = ""
 
@@ -327,7 +330,7 @@ def does_sample_have_this_insertion_point( vcf_reader, clean_intron_del_chrom, c
                else:
                  new_retrocopy_insertion_direction = "REVERSE"
 
-             new_insertion_point = InsertionPoint(new_retrocopy_chrom, new_retrocopy_start, new_retrocopy_end, new_insertion_chrom, new_left_insertion_point, new_right_insertion_point, new_insertion_sequence, new_retrocopy_insertion_direction, new_is_left_BND_present, new_is_right_BND_present)
+             new_insertion_point = InsertionPoint(new_retrocopy_chrom, new_retrocopy_start, new_retrocopy_end, new_insertion_chrom, new_left_insertion_point, new_right_insertion_point, new_insertion_sequence, new_retrocopy_insertion_direction, new_insertion_point_status, new_is_left_BND_present, new_is_right_BND_present)
 
   return sample_does_have_this_insertion_point, new_insertion_point
 
@@ -366,8 +369,9 @@ def find_insertion_points_using_insertion_points_of_other_samples(in_retrocopies
     right_insertion_point = str(data[10])
     insertion_sequence = str(data[11])
     retrocopy_insertion_direction = str(data[12])
-    is_left_BND_present = str(data[13])
-    is_right_BND_present = str(data[14])
+    insertion_point_status = str(data[13])
+    is_left_BND_present = str(data[14])
+    is_right_BND_present = str(data[15])
 
     this_record_needs_processing = False
     if (is_header):
@@ -417,11 +421,12 @@ def find_insertion_points_using_insertion_points_of_other_samples(in_retrocopies
             right_insertion_point = insertion_point.right_insertion_point
             insertion_sequence = insertion_point.insertion_sequence
             retrocopy_insertion_direction = insertion_point.retrocopy_insertion_direction
+            insertion_point_status = insertion_point.insertion_point_status
             is_left_BND_present = insertion_point.is_left_BND_present
             is_right_BND_present = insertion_point.is_right_BND_present
 
             # We found a new insertion point, so write out this retrocopied gene giving it this new insertion point.
-            outline = [cohort, sample, gene, chrom, clean_intron_del_start, clean_intron_del_end, retrocopy_start, retrocopy_end, insertion_chrom, left_insertion_point, right_insertion_point, insertion_sequence, retrocopy_insertion_direction, is_left_BND_present, is_right_BND_present]
+            outline = [cohort, sample, gene, chrom, clean_intron_del_start, clean_intron_del_end, retrocopy_start, retrocopy_end, insertion_chrom, left_insertion_point, right_insertion_point, insertion_sequence, retrocopy_insertion_direction, insertion_point_status, is_left_BND_present, is_right_BND_present]
             writer.writerow(outline)
 
             found_insertion_point = True

@@ -1,4 +1,4 @@
-# python3 find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels temp1_SCHN_1891.txt --in_sv SCHN_1891.gridss_2_7_3.vcf.gz --gene_regions /home/emma/emma/clean_intron_deletions/UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.txt --gene_region_extension_for_start_of_gene 20 --gene_region_extension 100000 --blacklist_regions insertion_points_blacklist_hg19.txt --bam SCHN_1891.bam --blacklist_depth 200 --args.max_dist_btwn_ins_pts 35 -o temp1_out_SCHN_1891.txt
+# python3 find_insertion_points_for_deletions_that_are_retrocopied_genes_for_cohort_sample.py --in_dels temp1_SCHN_1891.txt --in_sv SCHN_1891.gridss_2_7_3.vcf.gz --gene_regions /home/emma/emma/clean_intron_deletions/UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.txt --gene_region_extension_for_start_of_gene 20 --gene_region_extension 100000 --overly_mapped_regions insertion_points_overly_mapped_hg19.txt --bam SCHN_1891.bam --overly_mapped_depth 140 --args.max_dist_btwn_ins_pts 35 -o temp1_out_SCHN_1891.txt --blacklist_regions insertion_points_blacklist_hg19.txt
 
 # This program reads in clean_intron_deletions (there can be multiple ones for a given sample and gene, one for each intron of the gene).
 # For each sample gene, this program looks for the insertion point.
@@ -7,14 +7,19 @@
 # Actually, those two BNDs don't connect to exactly the same place. Their two connection points will be approx. 11 bp appart.
 # One of the connection may have an inserted sequence between the gene and the insertion point, usually poly-A (or poly-T).
 #
-# If a blacklist_regions file is provided, then this program will avoid those regions when looking for insertion_points.
-# If a bam file is provided, then this program will avoid regions that have a high depth of blacklist_depth or above, default is 200 if blacklist_depth not provided.
-# The program avoids such regions by ignoring them when it finds an insertion point in the region, continuing to look further for insertion_points.
+# If an overly_mapped_regions file is provided, then this program will consider those regions to be overly-mapped.
+# If a bam file is provided, then this program will consider regions that have a high depth to be overly-mapped_depth. Default depth for that is 140 and above.
+# If a blacklist_regions file is provided, then this program will not consider any insertion_points in the blacklist_regions.
+#
+# When an insertion_point found by this program overlaps with an overly-mapped region, then the insertion point is marked with insertion_point_status = "overly_mapped".
+# This means that we have found an insertion-point, but it is in an overly-mapped region and thus we do not trust that this region is the true region where this retrocopied gene has been inserted.
+# There are too many reads mapped in this overly-mapped region, and most of them probably appear elsewhere in the genome, but the alignment program has mapped them all here.
+# Otherwise the insertion_point_status = "" (nothing, no value)
 #
 # This program finds only the first insertion point (or none if there aren't any) for a given sample and gene.
 # If a sample has more than one insertion point (for example, on different chromosomes), then this program finds only one of them.
-# To find another insertion point (if there are any more for the same sample and gene), then you could add the found insertion point to the blacklist regions and run this program again.
-# Thus, the program will not find the first insertion point (because it is now in a blacklisted region) and instead find the next one (if there are any)
+# To find another insertion point (if there are any more for the same sample and gene), then you could add the found insertion point to the overly_mapped regions and run this program again.
+# Thus, the program will not find the first insertion point (because it is now in a overly_mapped region) and instead find the next one (if there are any)
 # or find no insertion point (when this sample does not have any more insertion points for this gene).
 
 # in_dels format,
@@ -40,10 +45,10 @@
 # output format, insertion_point fields are filled only when insertion_point was found.
 # Contains the left-most and right-most clean-intron-deletion coordinates, the point before the left-most and the point after the right-most coordinates that connect to the insertion-point (called retrocopy_start and retrocopy_end), and the insertion-points left and right positions (usually approx 11 bp apart).
 # Insertion point can be on a different chromosome. The clean-intron-deletions and retrocopy start/end are on the same chromosome as each other.
-# cohort       sample          gene	chrom	clean_intron_del_start	clean_intron_del_end	retrocopy_start	retrocopy_end	insertion_chrom	left_insertion_point	right_insertion_point	insertion_sequence	retrocopy_insertion_direction
+# cohort       sample          gene	chrom	clean_intron_del_start	clean_intron_del_end	retrocopy_start	retrocopy_end	insertion_chrom	left_insertion_point	right_insertion_point	insertion_sequence	retrocopy_insertion_direction	insertion_point_status
 # mycohort     mysample        RBP5	12	7281658	7281688						
-# mycohort     mysample        TYRO3	15	41866014	41870084	41851396	41871536	13	44069827	44069838	AAAAAAAAAAAAAAAAAAAAAAAAA	FORWARD
-# mycohort     mysample        SMAD4	18	48556993	48604626	48556624	48606219	9	127732636	127732713		REVERSE
+# mycohort     mysample        TYRO3	15	41866014	41870084	41851396	41871536	13	44069827	44069838	AAAAAAAAAAAAAAAAAAAAAAAAA	FORWARD	.
+# mycohort     mysample        SMAD4	18	48556993	48604626	48556624	48606219	9	127732636	127732713		REVERSE	overly_mapped
 # mycohort     mysample        PRKRA	2	179296982	179315693				
 
 # gene_regions format:
@@ -51,6 +56,11 @@
 # 1	14361	29370	WASH7P	-
 # 1	17368	17436	MIR6859-1	-
 # 1	30365	30503	MIR1302-2	+
+
+# overly_mapped_regions format:
+# 2	33141300	33141700
+# Y	17994840	17994950
+# 13	44069825	44069826
 
 # blacklist_regions format:
 # 2	33141300	33141700
@@ -74,7 +84,7 @@
 # There are some simple genomic regions such as GGGGGGGGGGGGGGGGGGGGGG where 100,000 reads might be mapped, 
 # for which most of the read pair mates map elsewhere in the genome.
 # Do not allow these regions to be identified as insertion points because they would be false positive insertion points.
-# Format of the optional blacklist_regions file:
+# Format of the optional overly_mapped_regions file:
 # chrom		start_pos	end_pos
 
 # This program does not yet add the following fields to its output. They will be added by a script afterwards:
@@ -112,11 +122,13 @@ def parse_arguments(args):
                         help='Add this many basepairs before the beginning of the gene region to look for its insertion point')
     parser.add_argument('--gene_region_extension', dest='gene_region_extension', required=False, 
                         help='Add this many basepairs on after the end of the gene region to look for its insertion point')
+    parser.add_argument('--overly_mapped_regions', dest='overly_mapped_regions', required=False, 
+                        help='If an insertion point is in an overly_mapped regions, then mark the insertion_point as overly_mapped.')
     parser.add_argument('--blacklist_regions', dest='blacklist_regions', required=False, 
-                        help='Do not find any insertion points in these blacklisted regions. If any found then keep looking for insertion points elsewhere.')
+                        help='Do not find any insertion points in these overly_mapped regions. If any found then keep looking for insertion points elsewhere.')
     parser.add_argument('--bam', dest='bam', required=False, 
-                        help='Do not find any insertion points in regions that have a high read depth in this bam file. Defaults to 200x.')
-    parser.add_argument('--blacklist_depth', dest='blacklist_depth', required=False, 
+                        help='Do not find any insertion points in regions that have a high read depth in this bam file. Defaults to 140x.')
+    parser.add_argument('--overly_mapped_depth', dest='overly_mapped_depth', required=False, 
                         help='Do not find any insertion points in regions whose bam depth is this value or higher.')
     parser.add_argument('--max_dist_btwn_ins_pts', dest='max_dist_btwn_ins_pts', required=False, 
                         help='The maximum distances allowed between the 2 ends of an insertion point. Defaults to 35 bp.')
@@ -129,10 +141,10 @@ def parse_arguments(args):
       args.gene_region_extension = 0
     else:
       args.gene_region_extension = int(args.gene_region_extension)
-    if args.blacklist_depth is None:
-      args.blacklist_depth = 140
+    if args.overly_mapped_depth is None:
+      args.overly_mapped_depth = 140
     else:
-      args.blacklist_depth = int(args.blacklist_depth)
+      args.overly_mapped_depth = int(args.overly_mapped_depth)
 
     #print('args.gene_region_extension')
     #print(args.gene_region_extension)
@@ -237,7 +249,7 @@ class InsertionPointPair:
     """
     This object represents the left and right insertion points of a retrocopied gene.
     """
-    def __init__(self, initial_left_chrom, initial_left_pos, initial_left_alt_chrom, initial_left_alt_pos, initial_left_seq, initial_right_chrom, initial_right_pos, initial_right_alt_chrom, initial_right_alt_pos, initial_right_seq, initial_distance_between_insertion_points, initial_sequence, initial_sequence_longest_AAA_or_TTT, initial_retrocopy_insertion_direction):
+    def __init__(self, initial_left_chrom, initial_left_pos, initial_left_alt_chrom, initial_left_alt_pos, initial_left_seq, initial_right_chrom, initial_right_pos, initial_right_alt_chrom, initial_right_alt_pos, initial_right_seq, initial_distance_between_insertion_points, initial_sequence, initial_sequence_longest_AAA_or_TTT, initial_retrocopy_insertion_direction, initial_insertion_point_status):
         self.left_chrom = initial_left_chrom
         self.left_pos = initial_left_pos
         self.left_alt_chrom = initial_left_alt_chrom
@@ -260,37 +272,46 @@ class InsertionPointPair:
           self.sequence_longest_AAA_or_TTT = initial_sequence_longest_AAA_or_TTT
         else:
           self.sequence_longest_AAA_or_TTT = 0
-        self.retrocopy_insertion_direction = initial_retrocopy_insertion_direction
+        if initial_retrocopy_insertion_direction is not None:
+          self.retrocopy_insertion_direction = initial_retrocopy_insertion_direction
+        else:
+          self.retrocopy_insertion_direction = ""
+        if initial_insertion_point_status is not None:
+          self.insertion_point_status = initial_insertion_point_status
+        else:
+          self.insertion_point_status = ""
 
     def print(self, **kwargs):
-        if self.left_chrom is not None:
-          print( "left_chrom = " + str(self.left_chrom) )
-        if self.left_pos is not None:
-          print( "left_pos = " + str(self.left_pos) )
-        if self.left_alt_chrom is not None:
-          print( "left_alt_chrom = " + str(self.left_alt_chrom) )
-        if self.left_alt_pos is not None:
-          print( "left_alt_pos = " + str(self.left_alt_pos) )
-        if self.left_seq is not None:
-          print( "left_seq = " + str(self.left_seq) )
-        if self.right_chrom is not None:
-          print( "right_chrom = " + str(self.right_chrom) )
-        if self.right_pos is not None:
-          print( "right_pos = " + str(self.right_pos) )
-        if self.right_alt_chrom is not None:
-          print( "right_alt_chrom = " + str(self.right_alt_chrom) )
-        if self.right_alt_pos is not None:
-          print( "right_alt_pos = " + str(self.right_alt_pos) )
-        if self.right_seq is not None:
-          print( "right_seq = " + str(self.right_seq) )
-        if self.distance_between_insertion_points is not None:
-          print( "distance_between_insertion_points = " + str(self.distance_between_insertion_points) )
-        if self.sequence is not None:
-          print( "sequence =" + str(self.sequence) )
-        if self.sequence_longest_AAA_or_TTT is not None:
-          print( "sequence_longest_AAA_or_TTT = " + str(self.sequence_longest_AAA_or_TTT) )
-        if self.retrocopy_insertion_direction is not None:
-          print( "retrocopy_insertion_direction = " + str(self.retrocopy_insertion_direction) )
+        #if self.left_chrom is not None:
+        print( "left_chrom = " + str(self.left_chrom) )
+        #if self.left_pos is not None:
+        print( "left_pos = " + str(self.left_pos) )
+        #if self.left_alt_chrom is not None:
+        print( "left_alt_chrom = " + str(self.left_alt_chrom) )
+        #if self.left_alt_pos is not None:
+        print( "left_alt_pos = " + str(self.left_alt_pos) )
+        #if self.left_seq is not None:
+        print( "left_seq = " + str(self.left_seq) )
+        #if self.right_chrom is not None:
+        print( "right_chrom = " + str(self.right_chrom) )
+        #if self.right_pos is not None:
+        print( "right_pos = " + str(self.right_pos) )
+        #if self.right_alt_chrom is not None:
+        print( "right_alt_chrom = " + str(self.right_alt_chrom) )
+        #if self.right_alt_pos is not None:
+        print( "right_alt_pos = " + str(self.right_alt_pos) )
+        #if self.right_seq is not None:
+        print( "right_seq = " + str(self.right_seq) )
+        #if self.distance_between_insertion_points is not None:
+        print( "distance_between_insertion_points = " + str(self.distance_between_insertion_points) )
+        #if self.sequence is not None:
+        print( "sequence = " + str(self.sequence) )
+        #if self.sequence_longest_AAA_or_TTT is not None:
+        print( "sequence_longest_AAA_or_TTT = " + str(self.sequence_longest_AAA_or_TTT) )
+        #if self.retrocopy_insertion_direction is not None:
+        print( "retrocopy_insertion_direction = " + str(self.retrocopy_insertion_direction) )
+        #if self.insertion_point_status is not None:
+        print( "insertion_point_status = " + str(self.insertion_point_status) )
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
@@ -594,7 +615,7 @@ def is_bam_region_too_deep( args, chrom, pos1, pos2, retrogene_chrom, retrogene_
 
       pos_upto = pos_upto + get_depth_every_N_nucleotides
 
-    if (max_depth_of_all_readings >= args.blacklist_depth):
+    if (max_depth_of_all_readings >= args.overly_mapped_depth):
       bam_region_is_too_deep = True
 
   return bam_region_is_too_deep
@@ -616,7 +637,7 @@ def find_candidate_insertion_point_BND_records( args, look_chrom, look_start, lo
   # Thus, if the clean_intron_deletion BND for the insertion is not present on the clean_intron_deletion chromosome,
   # then we will fail to find the insertion_point, even if there is the other BND present elsewhere that connects to this clean_intron_deletion chromosome at the insertion point.
 
-  # Do not allow insertion points candidates in any blacklisted regions.
+  # If the insertion points candidate is in any overly_mapped region, then accept it as an insertion point, but mark its status as overly_mapped.
 
   list_of_candidate_insertion_point_BND_records = []
 
@@ -707,7 +728,7 @@ def find_candidate_insertion_point_BND_records( args, look_chrom, look_start, lo
   return list_of_candidate_insertion_point_BND_records
 
 
-def identify_insertion_points_from_candidates( args, left_insertion_point_candidates, right_insertion_point_candidates, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points ):
+def identify_insertion_points_from_candidates( args, left_insertion_point_candidates, right_insertion_point_candidates, overly_mapped_regions, bam_pysam_handle, max_distance_between_insertion_points, blacklist_regions ):
 
   # Find the left BND closest to the first clean_intron_deletion that connects to the same chromosome that a right BND connects to, not far (within 35 bp) of the right BND connection position.
   # Find the right BND closest to the last clean_intron_deletion that connects to the same chromosome that a left BND connects to, not far (within 35 bp) of the left BND connection position.
@@ -720,7 +741,7 @@ def identify_insertion_points_from_candidates( args, left_insertion_point_candid
   max_ij = max( len(left_insertion_point_candidates), len(right_insertion_point_candidates) )
   found_insertion_points = False
   min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points = 6
-  best_insertion_point_pair = InsertionPointPair(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+  best_insertion_point_pair = InsertionPointPair(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
   i = len(left_insertion_point_candidates)
   for j in range( 0, max_ij ):
@@ -729,12 +750,13 @@ def identify_insertion_points_from_candidates( args, left_insertion_point_candid
     # consider the next candidate BND on the left of the clean_intron_deletions
     if ( (i >= 0) and (i < len(left_insertion_point_candidates)) ):
       this_left_BND = left_insertion_point_candidates[i]
+      this_insertion_point_status = ""
 
       if this_left_BND.alt_chrom in right_insertion_point_candidates_by_chrom:
         right_BNDs_having_alt_on_this_same_chrom_as_left_BND_alt_chrom = right_insertion_point_candidates_by_chrom[ this_left_BND.alt_chrom ]
 
         for this_right_BND in right_BNDs_having_alt_on_this_same_chrom_as_left_BND_alt_chrom:
-          #this_right_BND.print()
+          #this_right_BND.print() # debug
 
           this_distance_between_insertion_points = abs( this_right_BND.alt_pos - this_left_BND.alt_pos )
           this_retrocopy_insertion_direction = "FORWARD" # if (this_left_BND.alt_pos < this_right_BND.alt_pos)
@@ -744,47 +766,56 @@ def identify_insertion_points_from_candidates( args, left_insertion_point_candid
           # consider only BND pairs that are close to each other
           if (this_distance_between_insertion_points <= max_distance_between_insertion_points):
 
-            is_this_putative_insertion_point_in_blacklisted_region = does_region_overlap_regions( this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, blacklisted_regions )
-            # is the putative insertion point in a blacklisted region?
+            is_this_putative_insertion_point_in_blacklisted_region = does_region_overlap_regions( this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, blacklist_regions )
+            # is the putative insertion point in a blacklisted region? we don't consider insertion points in blacklisted regions.
             if (is_this_putative_insertion_point_in_blacklisted_region == False):
 
-              is_this_putative_insertion_point_in_bam_region_having_too_much_depth = is_bam_region_too_deep( args, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, this_left_BND.chrom, this_left_BND.pos, this_right_BND.pos, bam_pysam_handle )
-              # is the putative insertion point in a region having lots of depth and lots of reads erroneously mapped here and thus read mate BNDs are false positives?
-              if (is_this_putative_insertion_point_in_bam_region_having_too_much_depth == False):
+              is_this_putative_insertion_point_in_overly_mapped_region = does_region_overlap_regions( this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, overly_mapped_regions )
+              # is the putative insertion point in a overly_mapped region?
+              if (is_this_putative_insertion_point_in_overly_mapped_region == True):
+                this_insertion_point_status = "overly_mapped"
+                #print("overly_mapped_1") # debug
+              else:
+                is_this_putative_insertion_point_in_bam_region_having_too_much_depth = is_bam_region_too_deep( args, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, this_left_BND.chrom, this_left_BND.pos, this_right_BND.pos, bam_pysam_handle )
+                # is the putative insertion point in a region having lots of depth and lots of reads erroneously mapped here and thus read mate BNDs are false positives?
+                if (is_this_putative_insertion_point_in_bam_region_having_too_much_depth == True):
+                  this_insertion_point_status = "overly_mapped"
+                  #print("overly_mapped_2") # debug
 
-                if (this_left_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
+              if (this_left_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
 
-                  if (this_left_BND.sequence_longest_AAA_or_TTT > best_insertion_point_pair.sequence_longest_AAA_or_TTT):
-                    best_insertion_point_pair = InsertionPointPair( this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_distance_between_insertion_points, this_left_BND.sequence, this_left_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction)
+                if (this_left_BND.sequence_longest_AAA_or_TTT > best_insertion_point_pair.sequence_longest_AAA_or_TTT):
+                  best_insertion_point_pair = InsertionPointPair( this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_distance_between_insertion_points, this_left_BND.sequence, this_left_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction, this_insertion_point_status)
 
-                  elif (this_left_BND.sequence_longest_AAA_or_TTT == best_insertion_point_pair):
-                    if (this_distance_between_insertion_points < best_insertion_point_pair.distance_between_insertion_points):
-                      best_insertion_point_pair = InsertionPointPair( this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_distance_between_insertion_points, this_left_BND.sequence, this_left_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction)
-
-                  else: # (this_left_BND.sequence_longest_AAA_or_TTT < best_insertion_point_pair):
-                    do_nothing = 1
-
-                else: # (this_left_BND.sequence_longest_AAA_or_TTT < min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
-
+                elif (this_left_BND.sequence_longest_AAA_or_TTT == best_insertion_point_pair.sequence_longest_AAA_or_TTT):
                   if (this_distance_between_insertion_points < best_insertion_point_pair.distance_between_insertion_points):
+                      best_insertion_point_pair = InsertionPointPair( this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_distance_between_insertion_points, this_left_BND.sequence, this_left_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction, this_insertion_point_status)
 
-                    this_sequence = ''
-                    this_sequence_longest_AAA_or_TTT = 0
-                    if (this_right_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
-                      this_sequence = this_right_BND.sequence
-                      this_sequence_longest_AAA_or_TTT = this_right_BND.sequence_longest_AAA_or_TTT
+                else: # (this_left_BND.sequence_longest_AAA_or_TTT < best_insertion_point_pair.sequence_longest_AAA_or_TTT):
+                  do_nothing = 1
 
-                    best_insertion_point_pair = InsertionPointPair( this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_distance_between_insertion_points, this_sequence, this_sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction)
+              else: # (this_left_BND.sequence_longest_AAA_or_TTT < min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
+
+                if (this_distance_between_insertion_points < best_insertion_point_pair.distance_between_insertion_points):
+
+                  this_sequence = ''
+                  this_sequence_longest_AAA_or_TTT = 0
+                  if (this_right_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
+                    this_sequence = this_right_BND.sequence
+                    this_sequence_longest_AAA_or_TTT = this_right_BND.sequence_longest_AAA_or_TTT
+
+                  best_insertion_point_pair = InsertionPointPair( this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_distance_between_insertion_points, this_sequence, this_sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction, this_insertion_point_status)
 
     # consider the next candidate BND on the right of the clean_intron_deletions
     if ( (j >= 0) and (j < len(right_insertion_point_candidates)) ):
       this_right_BND = right_insertion_point_candidates[j]
+      this_insertion_point_status = ""
 
       if this_right_BND.alt_chrom in left_insertion_point_candidates_by_chrom:
         left_BNDs_having_alt_on_this_same_chrom_as_right_BND_alt_chrom = left_insertion_point_candidates_by_chrom[ this_right_BND.alt_chrom ]
 
         for this_left_BND in left_BNDs_having_alt_on_this_same_chrom_as_right_BND_alt_chrom:
-          #this_left_BND.print()
+          #this_left_BND.print() # debug
 
           this_distance_between_insertion_points = abs( this_left_BND.alt_pos - this_right_BND.alt_pos )
           this_retrocopy_insertion_direction = "FORWARD" # if (this_left_BND.alt_pos < this_right_BND.alt_pos)
@@ -794,37 +825,45 @@ def identify_insertion_points_from_candidates( args, left_insertion_point_candid
           # consider only BND pairs that are close to each other
           if (this_distance_between_insertion_points <= max_distance_between_insertion_points):
 
-            is_this_putative_insertion_point_in_blacklisted_region = does_region_overlap_regions( this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, blacklisted_regions )
-            # is the putative insertion point in a blacklisted region?
+            is_this_putative_insertion_point_in_blacklisted_region = does_region_overlap_regions( this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, blacklist_regions )
+            # is the putative insertion point in a blacklisted region? we don't consider insertion points in blacklisted regions.
             if (is_this_putative_insertion_point_in_blacklisted_region == False):
 
-              is_this_putative_insertion_point_in_bam_region_having_too_much_depth = is_bam_region_too_deep( args, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, this_left_BND.chrom, this_left_BND.pos, this_right_BND.pos, bam_pysam_handle )
-              # is the putative insertion point in a region having lots of depth and lots of reads erroneously mapped here and thus read mate BNDs are false positives?
-              if (is_this_putative_insertion_point_in_bam_region_having_too_much_depth == False):
+              is_this_putative_insertion_point_in_overly_mapped_region = does_region_overlap_regions( this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, overly_mapped_regions )
+              # is the putative insertion point in a overly_mapped region?
+              if (is_this_putative_insertion_point_in_overly_mapped_region == True):
+                #this_insertion_point_status = "overly_mapped"
+                print("overly_mapped_3") # debug
+              else:
+                is_this_putative_insertion_point_in_bam_region_having_too_much_depth = is_bam_region_too_deep( args, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_right_BND.alt_pos, this_left_BND.chrom, this_left_BND.pos, this_right_BND.pos, bam_pysam_handle )
+                # is the putative insertion point in a region having lots of depth and lots of reads erroneously mapped here and thus read mate BNDs are false positives?
+                if (is_this_putative_insertion_point_in_bam_region_having_too_much_depth == True):
+                  #this_insertion_point_status = "overly_mapped"
+                  print("overly_mapped_4") # debug
 
-                if (this_right_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
+              if (this_right_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
 
-                  if (this_right_BND.sequence_longest_AAA_or_TTT > best_insertion_point_pair.sequence_longest_AAA_or_TTT):
-                    best_insertion_point_pair = InsertionPointPair( this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_distance_between_insertion_points, this_right_BND.sequence, this_right_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction)
+                if (this_right_BND.sequence_longest_AAA_or_TTT > best_insertion_point_pair.sequence_longest_AAA_or_TTT):
+                  best_insertion_point_pair = InsertionPointPair( this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_distance_between_insertion_points, this_right_BND.sequence, this_right_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction, this_insertion_point_status)
 
-                  elif (this_right_BND.sequence_longest_AAA_or_TTT == best_insertion_point_pair):
-                    if (this_distance_between_insertion_points < best_insertion_point_pair.distance_between_insertion_points):
-                      best_insertion_point_pair = InsertionPointPair( this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_distance_between_insertion_points, this_right_BND.sequence, this_right_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction)
-
-                  else: # (this_right_BND.sequence_longest_AAA_or_TTT < best_insertion_point_pair):
-                    do_nothing = 1
-
-                else: # (this_right_BND.sequence_longest_AAA_or_TTT < min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
-
+                elif (this_right_BND.sequence_longest_AAA_or_TTT == best_insertion_point_pair.sequence_longest_AAA_or_TTT):
                   if (this_distance_between_insertion_points < best_insertion_point_pair.distance_between_insertion_points):
+                    best_insertion_point_pair = InsertionPointPair( this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_distance_between_insertion_points, this_right_BND.sequence, this_right_BND.sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction, this_insertion_point_status)
 
-                    this_sequence = ''
-                    this_sequence_longest_AAA_or_TTT = 0
-                    if (this_left_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
-                      this_sequence = this_left_BND.sequence
-                      this_sequence_longest_AAA_or_TTT = this_left_BND.sequence_longest_AAA_or_TTT
+                else: # (this_right_BND.sequence_longest_AAA_or_TTT < best_insertion_point_pair.sequence_longest_AAA_or_TTT):
+                  do_nothing = 1
 
-                    best_insertion_point_pair = InsertionPointPair( this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_distance_between_insertion_points, this_sequence, this_sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction)
+              else: # (this_right_BND.sequence_longest_AAA_or_TTT < min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
+
+                if (this_distance_between_insertion_points < best_insertion_point_pair.distance_between_insertion_points):
+
+                  this_sequence = ''
+                  this_sequence_longest_AAA_or_TTT = 0
+                  if (this_left_BND.sequence_longest_AAA_or_TTT >= min_AAA_or_TTT_length_to_take_precedence_over_distance_between_insertion_points):
+                    this_sequence = this_left_BND.sequence
+                    this_sequence_longest_AAA_or_TTT = this_left_BND.sequence_longest_AAA_or_TTT
+
+                  best_insertion_point_pair = InsertionPointPair( this_right_BND.chrom, this_right_BND.pos, this_right_BND.alt_chrom, this_right_BND.alt_pos, this_right_BND.sequence, this_left_BND.chrom, this_left_BND.pos, this_left_BND.alt_chrom, this_left_BND.alt_pos, this_left_BND.sequence, this_distance_between_insertion_points, this_sequence, this_sequence_longest_AAA_or_TTT, this_retrocopy_insertion_direction, this_insertion_point_status)
 
   list_of_insertion_point_pairs.append( best_insertion_point_pair )
 
@@ -833,7 +872,7 @@ def identify_insertion_points_from_candidates( args, left_insertion_point_candid
 
 def write_out_header(writer):
 
-  outline = ["cohort", "sample", "gene", "chrom", "clean_intron_del_start", "clean_intron_del_end", "retrocopy_start", "retrocopy_end", "insertion_chrom", "left_insertion_point", "right_insertion_point", "insertion_sequence", "retrocopy_insertion_direction" ]
+  outline = ["cohort", "sample", "gene", "chrom", "clean_intron_del_start", "clean_intron_del_end", "retrocopy_start", "retrocopy_end", "insertion_chrom", "left_insertion_point", "right_insertion_point", "insertion_sequence", "retrocopy_insertion_direction", "insertion_point_status" ]
   writer.writerow(outline)
   return
 
@@ -854,12 +893,12 @@ def write_out_gene_and_its_insertion_points(writer, obj):
       left_insertion_point = obj2.right_alt_pos
       right_insertion_point = obj2.left_alt_pos
 
-  outline = [obj.cohort, obj.sample, obj.gene, obj.chrom, obj.min_start, obj.max_end, retrocopy_start, retrocopy_end, obj2.left_alt_chrom, left_insertion_point, right_insertion_point, obj2.sequence, obj2.retrocopy_insertion_direction ]
+  outline = [obj.cohort, obj.sample, obj.gene, obj.chrom, obj.min_start, obj.max_end, retrocopy_start, retrocopy_end, obj2.left_alt_chrom, left_insertion_point, right_insertion_point, obj2.sequence, obj2.retrocopy_insertion_direction, obj2.insertion_point_status ]
   writer.writerow(outline)
   return
 
 
-def find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, gene_region_extension_for_start_of_gene, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points):
+def find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, gene_region_extension_for_start_of_gene, overly_mapped_regions, bam_pysam_handle, max_distance_between_insertion_points, blacklist_regions):
 
   writer = csv.writer(open(output_file_path, 'w'), delimiter='\t')
   write_out_header(writer)
@@ -897,7 +936,7 @@ def find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels
     #for this_one in right_insertion_point_candidates:
     #    print(this_one)
 
-    list_of_insertion_point_pairs = identify_insertion_points_from_candidates( args, left_insertion_point_candidates, right_insertion_point_candidates, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points )
+    list_of_insertion_point_pairs = identify_insertion_points_from_candidates( args, left_insertion_point_candidates, right_insertion_point_candidates, overly_mapped_regions, bam_pysam_handle, max_distance_between_insertion_points, blacklist_regions )
     this_gene_and_its_dels.list_of_insertion_point_pairs = list_of_insertion_point_pairs
 
     write_out_gene_and_its_insertion_points(writer, this_gene_and_its_dels)
@@ -910,9 +949,27 @@ def find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels
   return
 
 
+def get_overly_mapped_regions(args):
+
+  overly_mapped_regions = []
+  if args.overly_mapped_regions is not None:
+
+    with open(args.overly_mapped_regions, newline='') as csvfile:
+      region_data = list(csv.reader(csvfile, delimiter='\t'))
+
+    for data in region_data:
+      chrom = str(data[0])
+      start = int(data[1])
+      end = int(data[2])
+      this_gene_region = ChromRegion( chrom, start, end )
+      overly_mapped_regions.append( this_gene_region )
+
+  return overly_mapped_regions
+
+
 def get_blacklist_regions(args):
 
-  blacklisted_regions = []
+  blacklist_regions = []
   if args.blacklist_regions is not None:
 
     with open(args.blacklist_regions, newline='') as csvfile:
@@ -923,9 +980,9 @@ def get_blacklist_regions(args):
       start = int(data[1])
       end = int(data[2])
       this_gene_region = ChromRegion( chrom, start, end )
-      blacklisted_regions.append( this_gene_region )
+      blacklist_regions.append( this_gene_region )
 
-  return blacklisted_regions
+  return blacklist_regions
 
 
 def open_bam_file(args):
@@ -956,10 +1013,13 @@ def main(args):
     gene_region_extension_for_start_of_gene = int(args.gene_region_extension_for_start_of_gene)
   print(' ')
 
-  blacklisted_regions = get_blacklist_regions(args)
+  overly_mapped_regions = get_overly_mapped_regions(args)
   bam_pysam_handle = open_bam_file(args)
+  blacklist_regions = ''
+  if args.blacklist_regions is not None:
+    blacklist_regions = get_blacklist_regions(args)
 
-  find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, gene_region_extension_for_start_of_gene, blacklisted_regions, bam_pysam_handle, max_distance_between_insertion_points)
+  find_insertion_points_for_deletions_that_are_retrocopied_genes(args, in_dels_path, in_sv_path, gene_regions_path, output_file_path, gene_region_extension, gene_region_extension_for_start_of_gene, overly_mapped_regions, bam_pysam_handle, max_distance_between_insertion_points, blacklist_regions)
 
   print(' ')
   print('find_insertion_points_for_deletions_that_are_retrocopied_genes.py')

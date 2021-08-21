@@ -4,12 +4,12 @@ indir=$1
 
 outdir=$indir
 
-outfile="${outdir}"/All__insertion_points_for_deletions_that_are_retrocopied_genes.sort_by_sample.txt
-outfile2="${outdir}"/All__insertion_points_for_deletions_that_are_retrocopied_genes.sort_by_gene.txt
+outfile="${outdir}"/All__insertion_points_for_deletions_that_are_retrocopied_genes_N.sort_by_sample.txt
+outfile2="${outdir}"/All__insertion_points_for_deletions_that_are_retrocopied_genes_N.sort_by_gene.txt
 
 :>$outfile
 i=1
-for infile in "${indir}"/*.insertion_points_for_deletions_that_are_retrocopied_genes_1.tsv; do
+for infile in "${indir}"/*.insertion_points_for_deletions_that_are_retrocopied_genes_N.tsv; do
 
   if [[ $i -eq 1 ]]; then
     head -n 1 $infile > $outfile

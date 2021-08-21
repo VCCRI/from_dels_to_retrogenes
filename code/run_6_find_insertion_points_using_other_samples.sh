@@ -9,54 +9,23 @@ infile_from_gridss=$6 # the input gridss vcf file, will be used to create file n
 python_path=$7 # needed for the python program to use python packages, will be used in command: export PYTHONPATH=$python_path
 in_bam=$8 # preferably the bam file for this sample, sequenced to 30x or 40x depth, or else a representative bam file of similar depth and same genome version, 
           # to see regions of unusually high depth that must be avoided when looking for insertion sites
+infile=$9
+other_samples_retrocopies="${10}"
+outfile="${11}"
 
-#infiles="${outdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes*.tsv
-#infile1="${outdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes_1.tsv
-#tmp_hdr="${tmpdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes_1.hdr.tsv
-#infile="${tmpdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes.all.tsv
-#head -n 1 $infile1 > $tmp_hdr
-#cat $infiles | grep -v '^cohort' | cat $tmp_hdr - > $infile
-
-infile="${outdir}"/"${sample}".insertion_points_for_deletions_that_are_retrocopied_genes_1.tsv
-
-other_samples_retrocopies="${outdir}"/All__insertion_points_for_deletions_that_are_retrocopied_genes.sort_by_sample.txt
-in_dels="${outdir}"/"${sample}".clean_intron_deletions_with_strand_and_vaf.tsv
 in_sv=$infile_from_gridss
-
-outfile="${outdir}"/"${sample}".insertion_points_for_retrocopied_genes_including_using_other_samples.tsv
 
 if [[ $genome == "hg19" ]]; then
   gene_regions=../reference_data/hg19_UCSC_GRCh37_GenesAndGenePredictions_genes_RefSeq_20200324.txt
-else
-  gene_regions=../reference_data/hg38_UCSC_GRCh38_GenesAndGenePredictions_genes_RefSeq_20200901.txt
-fi
-
-if [[ $genome == "hg19" ]]; then
   blacklist_regions=../reference_data/hg19_insertion_points_blacklist_hg19.txt
 else
+  gene_regions=../reference_data/hg38_UCSC_GRCh38_GenesAndGenePredictions_genes_RefSeq_20200901.txt
   blacklist_regions=../reference_data/hg38_insertion_points_blacklist_hg38.txt
 fi
 
 export PYTHONPATH=$python_path
 
 sw="."
-
-if [ -f "$in_sv" ]; then
-  do_nothing=1
-else
-  in_sv_vcf="${in_sv%.gz}"
-  echo 'bgzip -f' $in_sv_vcf
-  bgzip -f $in_sv_vcf
-  echo ''
-fi
-
-if [ -f "$in_sv".tbi ]; then
-  do_nothing=1
-else
-  echo 'tabix -p vcf' $in_sv
-  tabix -p vcf $in_sv
-  echo ''
-fi
 
 # In subsequent processing, extra fields need to be added. Add them now so that input and output files have same format.
 
