@@ -47,6 +47,9 @@ awk 'BEGIN {FS="\t";OFS="\t"} {if (NR==1) {left="is_left_BND_present";right="is_
 #
 echo ''
 
+# Now use insertion points of other samples to find insertion points not yet identified in a given sample,
+# also using incomplete evidence in this given sample for the insertion point.
+
 echo 'python3' $sw'/find_insertion_points_using_insertion_points_of_other_samples.py --in_retrocopies' $tmp_infile '--in_sv' $in_sv '--in_retrocopies_other_samples' $tmp_other '-o' $outfile
 python3 $sw/find_insertion_points_using_insertion_points_of_other_samples.py --in_retrocopies $tmp_infile --in_sv $in_sv --in_retrocopies_other_samples $tmp_other -o $outfile
 echo ''
