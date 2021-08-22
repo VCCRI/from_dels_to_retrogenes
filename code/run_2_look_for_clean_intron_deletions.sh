@@ -5,25 +5,15 @@ cohort=$2 # will appear in output data in cohort field
 sample=$3 # will appear in output data in sample field and will appear in output file names
 outdir=$4 # output files will be written here
 tmpdir=$5 # temporary files will be written here, some will be deleted, user can delete this directory after running the pipeline
-infile_from_gridss=$6 # the input gridss vcf file, will be used to create file names of output data in this pipeline
+infile=$6
+outfile=$7
 
-infile_basename=$(basename $infile_from_gridss)
-infile_basename="${infile_basename%.gz}"
-infile_basename="${infile_basename%.vcf}".filter_svtypes.vcf
-infile_basename="${infile_basename%.vcf}"
-infile_basename="${infile_basename%.tsv}"
-infile_basename="${infile_basename%.txt}"
-infile_basename="${infile_basename}".tsv
-infile_basename="${infile_basename}".rmvCols.tsv
-
-infile="${outdir}"/"${infile_basename}"
-
-outfile="${outdir}"/"${sample}".clean_intron_deletions_with_strand_and_vaf.tsv
+currdir=$(pwd)
 
 if [[ $genome == "hg19" ]]; then
-  introns=../reference_data/hg19_UCSC_GRCh37_GenesAndGenePredictions_introns_RefSeq_20200324.txt
+  introns="${currdir}"/../reference_data/hg19_UCSC_GRCh37_GenesAndGenePredictions_introns_RefSeq_20200324.txt
 else
-  introns=../reference_data/hg38_UCSC_GRCh38_GenesAndGenePredictions_introns_RefSeq_20200901.txt
+  introns="${currdir}"/../reference_data/hg38_UCSC_GRCh38_GenesAndGenePredictions_introns_RefSeq_20200901.txt
 fi
 
 echo 'infile:' $infile
