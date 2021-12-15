@@ -30,6 +30,7 @@ cd ../code
 #
 ./run_1_call_dels_from_bnds_in_cohort.sh hg38 MY_COHORT_ID . /my/output/directory /my/temp/directory /my/directory/of/gridss/files
 ./run_2_look_for_clean_intron_deletions_in_cohort.sh hg38 MY_COHORT_ID . /my/output/directory /my/temp/directory
+./run_2b_add_depth_adjust_vaf_in_clean_intron_dels_in_cohort.sh hg38 MY_COHORT_ID . /my/output/directory /my/temp/directory /my/directory/of/bam/files
 ./run_3_find_insertion_points_for_retrocopied_genes_in_cohort.sh hg38 MY_COHORT_ID . /my/output/directory /my/temp/directory /my/directory/of/gridss/files /my/PYTHON_PATH /my/directory/of/bam/files
 
 # Concatenate the results from all samples.

@@ -1,17 +1,4 @@
 #!/bin/bash
-#PBS -P a32
-#PBS -q normal
-#PBS -l walltime=20:00:00
-#PBS -l mem=64G
-#PBS -l ncpus=1
-#PBS -l jobfs=300G
-#PBS -N strucVarsAnnotate
-#PBS -lstorage=scratch/jb96+gdata/jb96+gdata/a32
-#PBS -m bea
-
-#noPBS -M e.rath@victorchang.edu.au
-
-# Now that we have gencode, manta results need jobfs=300G. gridss is still ok with jobfs=100G
 
 set -euo pipefail
 
@@ -22,15 +9,7 @@ outfile=$4
 outprefix=$5
 sw_and_refs=$6
 cohort=$7
-
-#sample=19W001100
-#infile_tsv=/g/data/a32/quarterly_x1_10TB/WGS/BAM/AGHA_1/working_directory/VCGSfastq_bam_markDup_setTags_bqsr_manta_annotate/19W001100.manta_diploidSV_withInversions.tsv
-#outdir=/g/data/a32/quarterly_x1_10TB/WGS/BAM/AGHA_1/working_directory/VCGSfastq_bam_markDup_setTags_bqsr_manta_annotate
-#outfile=/g/data/a32/quarterly_x1_10TB/WGS/BAM/AGHA_1/working_directory/VCGSfastq_bam_markDup_setTags_bqsr_manta_annotate/19W001100.manta.CDSexons.EHRFr99.gnomadSV.DGV.txt
-#outprefix=/g/data/a32/quarterly_x1_10TB/WGS/BAM/AGHA_1/working_directory/VCGSfastq_bam_markDup_setTags_bqsr_manta_annotate/19W001100.manta
-#sw_and_refs=/g/data/a32/quarterly_x1_10TB/WGS/BAM/AGHA_1/code/where_are_softwares_and_references.sh
-#cohort=CHD # CHD or DCM
-#inbam=/g/data/a32/quarterly_x1_10TB/WGS/BAM/AGHA_1/working_directory/VCGSfastq_bam_markDup_setTags_bqsr/19W001100.markDup.setTags.bqsr.bam
+tmpdir=$8
 
 # This script uses bedtools to find the intersection between each row of the input data and the reference tables.
 # Bedtools produces multiple output rows for a given input row when it overlaps with more than one entry in the reference table.
@@ -45,36 +24,9 @@ cohort=$7
 # bedtools sort does not sort on the fifth column.
 # The consequences of this is that multiple rows remains, which can exponentially amplify the number of rows for each subsequent reference table comparison.
 
-#queue_file="${outfile}.queued"
-#lock_file="${outfile}.lock"
-#done_file="${outfile}.done"
-#term_file="${outfile}.term"
-#log_file="${outfile}.log"
-
-#touch "${lock_file}"
-#rm -f "${queue_file}"
-
-module load python3/3.7.4
-module load bedtools/2.28.0
-module load R/3.6.1
-module unload intel-fc intel-cc
-module load intel-compiler/2019.3.199
-export R_LIBS_USER=/g/data/jb96/software/victorchang_scripts/R_libraries_for_victorchang_scripts
-
-# set environment variables for softwares and references
-# sw_and_refs=where_are_softwares_and_references.sh
+# set environment variables for softwares and references.
+# they will be set by export command in the file sw_and_refs.
 . "${sw_and_refs}"
-# export ref_fasta=/g/data/jb96/References_and_Databases/hg38.noalt.decoy.bwa/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna
-# export sw=/g/data/jb96/software
-# export gatk_path=$sw/GATK/gatk-4.0.4.0/gatk
-# export picard_jar=$sw/picard/picard-2.18.26/picard.jar
-# export gatk_dbsnp=/g/data3/a32/References_and_Databases/GATK_bundle/hg38/beta/Homo_sapiens_assembly38.dbsnp138.vcf.gz
-
-PBS_JOBFS=./scrap30
-tmpdir="${PBS_JOBFS}"/tmp
-#tmpdir="${outdir}"/tmp
-#tmpdir=/g/data/or62/SCAD/WGS/struct_var_flagship_pipeline/code/scrap30
-mkdir -p "${tmpdir}"
 
 outprefix_sorted="${outprefix}".sorted.tsv
 outprefix_CDSexons="${outprefix}".CDSexons.tsv
@@ -629,8 +581,4 @@ rm -rf $outprefix_cleanIntronDels
 echo ''
 echo 'Finished!'
 echo ''
-
-#touch "${done_file}"
-#rm -f "${lock_file}"
-
 
