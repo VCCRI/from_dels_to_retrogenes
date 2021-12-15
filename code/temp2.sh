@@ -99,6 +99,8 @@ while [[ $keep_looking_for_more_insertion_points == "1" ]]; do
   cat $tmp_outfile | awk 'BEGIN {FS="\t";OFS="\t"} {if (($17 != "") && ($17 != ".") && (NR>1)) {print $0}}' | cat $prev_outfile - > $outfile
   echo ''
 
+  read -p "Press any key to resume ..."
+
   echo 'cp' $outfile $prev_outfile
   cp $outfile $prev_outfile
   echo ''

@@ -90,9 +90,9 @@ def get_insertion_point_sequence_from_reference(input_file_path, output_file_pat
     else:
 
       insertion_pt_ref_seq = ""
-      ins_pt_chrom = str(inline[8])
-      ins_pt_start_pos = str(inline[9])
-      ins_pt_end_pos = str(inline[10])
+      ins_pt_chrom = str(inline[16])
+      ins_pt_start_pos = str(inline[17])
+      ins_pt_end_pos = str(inline[18])
 
       if ((is_integer(ins_pt_start_pos)) and (is_integer(ins_pt_end_pos))):
         insertion_pt_ref_seq = get_ref_seq(ins_pt_chrom, ins_pt_start_pos, ins_pt_end_pos, ref_fasta)

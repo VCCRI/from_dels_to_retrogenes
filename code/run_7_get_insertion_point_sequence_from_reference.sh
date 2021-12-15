@@ -13,11 +13,9 @@ outfile=$9
 
 export PYTHONPATH=$python_path
 
-sw="."
-
 echo ''
-echo 'python3' $sw'/get_insertion_point_sequence_from_reference.py --input' $infile '--output' $outfile '--ref_fasta' $ref_fasta
-python3 $sw/get_insertion_point_sequence_from_reference.py --input $infile --output $outfile --ref_fasta $ref_fasta
+echo 'python3 get_insertion_point_sequence_from_reference.py --input' $infile '--output' $outfile '--ref_fasta' $ref_fasta
+python3 get_insertion_point_sequence_from_reference.py --input $infile --output $outfile --ref_fasta $ref_fasta
 echo ''
 
 echo 'outfile:' $outfile
