@@ -12,7 +12,7 @@ for infile in "${outdir}"/*.structural_variants_and_BND.tsv; do
   IFS='.' read -r -a array <<< "$infile_basename"
   sample="${array[0]}"
 
-  outfile="${outdir}"/"${sample}".clean_intron_deletions_with_strand_and_vaf.tsv
+  outfile="${outdir}"/"${sample}".clean_intron_deletions_with_strand_and_vaf_and_depth_and_numExons.tsv
 
   ./run_2_look_for_clean_intron_deletions.sh $genome $cohort $sample $outdir $tmpdir $infile $outfile
 
